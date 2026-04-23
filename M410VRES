@@ -1,0 +1,82 @@
+#Include 'Protheus.ch'
+
+/****************************************************************************************
+-----------------------------------------------------------------------------------------
+-- Programa:        | M410VRES    | Autor:  Leandro Muniz          | Data:  23/04/2026  --
+-----------------------------------------------------------------------------------------
+-- Descrição:       | Ponto de entrada apos eliminação de residuo para usuario          --
+--                  | justificar motivo da exclusão                                     --
+-----------------------------------------------------------------------------------------
+-- Chamada:         | MATA410, eliminação de residuo    							    --
+-----------------------------------------------------------------------------------------
+-- Funcionalidade:  | Criação de tela que abre automaticamente, ao usuario eliminar   	--
+--                  | residuo de um pedido de venda, para justificar motivo pelo qual   --
+--                  | esta sendo eliminado o residuo e povoando o motivo na tabela SC5. --
+--                  |                 	                                                --
+--                  |                 	                                                --
+-----------------------------------------------------------------------------------------
+*****************************************************************************************/
+
+User Function M410VRES()
+
+    Local cMotivo := Space(100)
+    Local cNumPed := SC5->C5_NUM
+
+    If !PedJustificativa("Justificativa de Exclusão de Resíduo", cNumPed, @cMotivo)
+        Return .F.
+    EndIf
+
+    RecLock("SC5", .F.)
+        SC5->C5_COMENT := cMotivo
+    MsUnlock()
+
+Return .T.
+
+/*----------------------------------------------------------------------*
+ | Func:  PedJustificativa                                     		    |
+ | Autor: Leandro Muniz                                                 |
+ | Data:  23/04/2026                                                    |
+ | Desc:  Tela de input de justificativa de exclusão do residuo	        |
+ | Obs.:  /                                                             |
+ *----------------------------------------------------------------------*/
+
+Static Function PedJustificativa(cTitulo, cNumRef, cMotivo)
+
+    Local oDlg
+    Local oSay
+    Local oGet
+    Local lOk := .F.
+
+    Define MsDialog oDlg Title cTitulo + " - " + cNumRef ;
+        From 0,0 To 150,400 Pixel
+
+        @ 10, 10 Say oSay Prompt "Digite o motivo da eliminação de residuos abaixo:" Of oDlg Pixel
+        @ 25, 10 Get oGet Var cMotivo Size 180, 12 Of oDlg Pixel
+        @ 50, 150 Button "Confirmar" Size 35, 12 Action (lOk := .T., oDlg:End()) Of oDlg Pixel
+
+    Activate MsDialog oDlg Centered
+
+    cMotivo := AllTrim(cMotivo)
+
+    If Empty(cMotivo)
+        MsgStop("O motivo é obrigatório para prosseguir!", "Atenção")
+        Return .F.
+    EndIf
+
+Return .T.
+/*----------------------------------------------------------------------------------------*
+*                                CONTROLE DE MANUTENÇÃO                                   *
+* ----------------------------------------------------------------------------------------*
+*|               |            |           |                                              |*
+*| Responsável   | Data       | Chamado   | Breve Descritivo                             |*
+*|_______________|____________|___________|______________________________________________|*
+*|               |            |           |                                              |*
+*|               |            |           |                                              |*
+*|               |            |           |                                              |*
+*|               |            |           |                                              |*
+*|               |            |           |                                              |*
+*|               |            |           |                                              |*
+*|               |            |           |                                              |*
+*|_______________|____________|___________|______________________________________________|*
+*                                                                                         *
+------------------------------------------------------------------------------------------*/
