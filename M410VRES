@@ -19,15 +19,19 @@
 
 User Function M410VRES()
 
-    Local cMotivo := Space(100)
+    Local cMotivo := Space(70)
     Local cNumPed := SC5->C5_NUM
+    Local cUsuario := cUserName
+    Local dHoje    := Date()
 
     If !PedJustificativa("Justificativa de Exclusão de Resíduo", cNumPed, @cMotivo)
         Return .F.
     EndIf
 
     RecLock("SC5", .F.)
-        SC5->C5_COMENT := cMotivo
+        SC5->C5_XDMORES := cMotivo
+        SC5->C5_USREXC  := AllTrim(cUsuario)
+        SC5->C5_DTVEXC  := dHoje
     MsUnlock()
 
 Return .T.
@@ -44,39 +48,42 @@ Static Function PedJustificativa(cTitulo, cNumRef, cMotivo)
 
     Local oDlg
     Local oSay
-    Local oGet
-    Local lOk := .F.
+    Local oCombo
+    Local lOk      := .F.
+    Local lValido  := .F.
+    Local cOpcao   := " "
+    Local aMotivos := {}
 
-    Define MsDialog oDlg Title cTitulo + " - " + cNumRef ;
-        From 0,0 To 150,400 Pixel
+    AAdd(aMotivos, " ")
+    AAdd(aMotivos, "Falta de Estoque")
+    AAdd(aMotivos, "Pedido abaixo do minimo para faturamento")
 
-        @ 10, 10 Say oSay Prompt "Digite o motivo da eliminação de residuos abaixo:" Of oDlg Pixel
-        @ 25, 10 Get oGet Var cMotivo Size 180, 12 Of oDlg Pixel
-        @ 50, 150 Button "Confirmar" Size 35, 12 Action (lOk := .T., oDlg:End()) Of oDlg Pixel
+    While !lValido
 
-    Activate MsDialog oDlg Centered
+        lOk    := .F.
+        cOpcao := " "
 
-    cMotivo := AllTrim(cMotivo)
+        Define MsDialog oDlg Title cTitulo + " - " + cNumRef ;
+            From 0,0 To 150,400 Pixel
 
-    If Empty(cMotivo)
-        MsgStop("O motivo é obrigatório para prosseguir!", "Atenção")
-        Return .F.
-    EndIf
+            @ 10, 10 Say oSay Prompt "Selecione o motivo da eliminação de resíduo:" Of oDlg Pixel
+            @ 25, 10 MsComboBox oCombo Var cOpcao Items aMotivos Size 180, 12 Of oDlg Pixel
+            @ 50, 150 Button "Confirmar" Size 35, 12 Action (lOk := .T., oDlg:End()) Of oDlg Pixel
+
+        Activate MsDialog oDlg Centered
+
+        If !lOk
+            Return .F.
+        EndIf
+
+        If AllTrim(cOpcao) == ""
+            MsgStop("Selecione um motivo valido para prosseguir!", "Atenção")
+        Else
+            lValido := .T.
+        EndIf
+
+    EndDo
+
+    cMotivo := AllTrim(cOpcao)
 
 Return .T.
-/*----------------------------------------------------------------------------------------*
-*                                CONTROLE DE MANUTENÇÃO                                   *
-* ----------------------------------------------------------------------------------------*
-*|               |            |           |                                              |*
-*| Responsável   | Data       | Chamado   | Breve Descritivo                             |*
-*|_______________|____________|___________|______________________________________________|*
-*|               |            |           |                                              |*
-*|               |            |           |                                              |*
-*|               |            |           |                                              |*
-*|               |            |           |                                              |*
-*|               |            |           |                                              |*
-*|               |            |           |                                              |*
-*|               |            |           |                                              |*
-*|_______________|____________|___________|______________________________________________|*
-*                                                                                         *
-------------------------------------------------------------------------------------------*/
